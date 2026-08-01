@@ -594,6 +594,54 @@ tbody tr:hover{background:var(--surface-2)}
 }
 .sheetmini span{display:block; height:4px; background:var(--line); border-radius:2px}
 .sheetmini span.t{background:var(--brand); width:42%; height:6px; margin-bottom:3px}
+
+/* ---------- plano de compra ---------- */
+.notinha{font-size:11.5px; color:var(--ink-3); margin:10px 0 0}
+.verbarow{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px}
+.verbalbl{font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
+.verbainput{
+  display:flex; align-items:center; gap:6px; padding:7px 11px;
+  border:1px solid var(--line); border-radius:5px; background:var(--surface);
+}
+.verbainput span{font-size:11.5px; color:var(--ink-3)}
+.verbainput input{
+  border:0; background:none; color:var(--ink); width:110px; outline:none;
+  font-family:var(--fm); font-size:16px; font-weight:600; font-variant-numeric:tabular-nums;
+}
+.verbainput:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.btn{
+  padding:8px 15px; border-radius:5px; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink); font:inherit; font-size:12.5px;
+  font-weight:500; cursor:pointer;
+}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* A barra é a verba: quanto foi para o piso, quanto para prateleira, quanto sobrou. */
+.barra{display:flex; height:26px; border-radius:5px; overflow:hidden; border:1px solid var(--line); margin-bottom:14px}
+.barra i{
+  display:flex; align-items:center; justify-content:center; font-family:var(--fm);
+  font-size:11px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden;
+}
+.barra i.piso{background:var(--accent)}
+.barra i.prat{background:var(--ok)}
+.barra i.falta{background:var(--line-2); color:var(--ink-3)}
+
+/* Curva ABC: uma linha por classe, largura proporcional ao valor. */
+.curva{display:flex; height:34px; border-radius:5px; overflow:hidden; border:1px solid var(--line); margin:14px 0 0}
+.curva i{
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  font-family:var(--fm); font-size:11.5px; font-weight:600; color:#fff; overflow:hidden; white-space:nowrap;
+}
+.curva i.a{background:var(--crit)} .curva i.b{background:var(--warn)} .curva i.c{background:var(--ink-3)}
+
+.avisobox{
+  border-left:2px solid var(--warn); background:var(--warn-soft);
+  padding:9px 12px; border-radius:0 4px 4px 0; margin-top:9px; font-size:12px; line-height:1.5;
+}
+.avisobox.grave{border-color:var(--crit); background:var(--crit-soft)}
 </style>
 
 <div class="app">
@@ -648,6 +696,11 @@ tbody tr:hover{background:var(--surface-2)}
       <button class="navbtn" data-view="recebimento">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5.5 8 2.5l6 3v7l-6 3-6-3v-7Z"/><path d="M2 5.5 8 8.5l6-3M8 8.5v7"/></svg>
         Recebimento <span class="count" style="background:var(--warn)">novo</span>
+      </button>
+
+      <button class="navbtn" data-view="plano">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 13.5V9l3-2.5 3 2 3-4 3 3v6z"/><path d="M1 14.5h14M2 6h4M2 3.5h7"/></svg>
+        Plano de compra <span class="count" id="nplano">verba</span>
       </button>
 
       <button class="navbtn" data-view="negociacao">
@@ -1223,6 +1276,42 @@ tbody tr:hover{background:var(--surface-2)}
       </section>
 
       <!-- ────────── NEGOCIAÇÃO ────────── -->
+      <!-- ══ plano de compra ══════════════════════════════════════════ -->
+      <section class="view" id="v-plano">
+        <div class="card sec">
+          <div class="cardhead">
+            <h3>Curva ABC apurada</h3>
+            <span class="sub">consumo mensal valorizado — Cmm × preço unitário, não o preço da etiqueta</span>
+            <span class="spacer"></span>
+            <span class="tag" id="plano-origem">demonstração</span>
+          </div>
+          <div class="cardbody">
+            <div class="grid g3" id="abc-kpis"></div>
+            <div class="curva" id="abc-curva"></div>
+            <p class="notinha" id="abc-nota"></p>
+          </div>
+        </div>
+
+        <div class="card sec">
+          <div class="cardhead">
+            <h3>O que comprar com a verba do ciclo</h3>
+            <span class="sub">repõe todo mundo até o ponto de pedido; o saldo compra prateleira na ordem da criticidade</span>
+          </div>
+          <div class="cardbody">
+            <div class="verbarow">
+              <label class="verbalbl" for="verba">Verba disponível</label>
+              <div class="verbainput"><span>R$</span><input id="verba" type="text" inputmode="numeric" value="180.000" aria-describedby="verba-ajuda"></div>
+              <button class="btn primary" id="calcplano">Montar plano</button>
+              <span class="notinha" id="verba-ajuda">O plano é proposta. Quem assina a compra é gente.</span>
+            </div>
+            <div class="barra" id="plano-barra"></div>
+            <div class="grid g4" id="plano-kpis"></div>
+            <div id="plano-avisos"></div>
+          </div>
+          <div class="cardbody flush tablewrap"><table id="tplano"></table></div>
+        </div>
+      </section>
+
       <section class="view" id="v-negociacao">
         <div class="card sec">
           <div class="cardhead">
@@ -1347,6 +1436,7 @@ tbody tr:hover{background:var(--surface-2)}
                   validade:"Risco de validade e ressuprimento", precos:"Tabelas e preços",
                   efi:"Efi — assistente", sentinela:"Sentinela — antecipação de risco",
                   recebimento:"Recebimento e qualificação",
+                  plano:"Plano de compra — curva ABC e verba",
                   negociacao:"Negociação", fmea:"FMEA — modos de falha", relatorios:"Relatórios"};
   $("#nav").addEventListener("click", e => {
     const b = e.target.closest(".navbtn"); if(!b) return;
@@ -3194,5 +3284,282 @@ tbody tr:hover{background:var(--surface-2)}
     unidade:"relatórios", inicial:[],
     aoMudar: sel => { relFiltro = sel.map(Number); pintarRelatorios(); },
   });
+
+  /* ═════════════════════════════════════════════════════════════
+     PLANO DE COMPRA — a primeira tela que fala com a API de verdade.
+
+     Se houver uma API respondendo em /saude, os números vêm de lá.
+     Se não houver, a tela cai para o conjunto de demonstração e diz
+     isso na etiqueta do cabeçalho. Painel que não distingue dado
+     real de dado de exemplo é pior que planilha nenhuma: convence.
+     ═════════════════════════════════════════════════════════════ */
+  const API = {
+    base: (location.protocol === "file:" || location.hostname.endsWith("github.io"))
+          ? "http://127.0.0.1:8000" : "",
+    token: null, unidade: null, viva: false,
+
+    async ping(){
+      try{
+        const c = new AbortController(); setTimeout(() => c.abort(), 1500);
+        const r = await fetch(this.base + "/saude", {signal: c.signal});
+        this.viva = r.ok;
+      }catch(e){ this.viva = false; }
+      return this.viva;
+    },
+    async post(rota, corpo){
+      const r = await fetch(this.base + rota, {
+        method: "POST",
+        headers: Object.assign({"Content-Type": "application/json"},
+                 this.token ? {Authorization: "Bearer " + this.token} : {}),
+        body: JSON.stringify(corpo),
+      });
+      if(!r.ok) throw new Error(r.status + " " + await r.text());
+      return r.json();
+    },
+  };
+
+  const pcBrl  = v => "R$ " + v.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+  const pcBrl0 = v => "R$ " + v.toLocaleString("pt-BR", {maximumFractionDigits:0});
+  const pcQtd  = v => v.toLocaleString("pt-BR", {maximumFractionDigits:0});
+  const pcDec  = (v, c) => v.toFixed(c).replace(".", ",");
+
+  /* Conjunto de demonstração — as mesmas linhas que o backend devolve para o
+     conjunto de referência, com os números já calculados. Fictícios, e a
+     etiqueta do cabeçalho diz isso. */
+  const DEMO_ABC = {
+    total_custo_cmm: 66014.60,
+    resumo: {A:{itens:10, custo:53176.50, participacao:0.806, participacao_itens:0.204},
+             B:{itens: 9, custo: 9388.80, participacao:0.142, participacao_itens:0.184},
+             C:{itens:30, custo: 3449.30, participacao:0.052, participacao_itens:0.612}},
+    avisos: ["8 itens estão a menos de 2 pontos percentuais da fronteira. A classe deles " +
+             "vira com pouca variação de consumo — reveja antes de mudar política."],
+    nota: "A curva classifica pelo consumo mensal valorizado (Cmm × preço), não pelo preço " +
+          "da etiqueta. O item mais caro deste conjunto custa R$ 427 a unidade e não é " +
+          "classe A: saem quatro por mês.",
+  };
+
+  const DEMO_LINHAS = [
+    ["Cloreto de sódio 0,9% 500 mL", "AZ", 1, 27728, 0.45],
+    ["Glicose 50% 10 mL",            "AZ", 1, 51041, 0.15],
+    ["Surfactante pulmonar 200 mg",  "BZ", 1,    17, 427.00],
+    ["Suxametônio 500 mg",           "BZ", 1,   860, 5.50],
+    ["Atracúrio 25 mg",              "BZ", 1,  1100, 4.12],
+    ["Epinefrina 1 mg",              "BZ", 1, 11841, 0.25],
+    ["Flumazenil 0,5 mg",            "BZ", 1,    27, 84.56],
+    ["Água destilada 500 mL",        "BZ", 1,  4424, 0.43],
+    ["Tiopental 1 g",                "CZ", 1,   261, 6.00],
+    ["Anfotericina B 50 mg",         "CZ", 1,    90, 10.49],
+    ["Amicacina 100 mg",             "CZ", 1,   976, 0.29],
+    ["Imipeném+cilastatina 500 mg",  "AY", 2,  1645, 48.00],
+    ["Midazolam 50 mg/10 mL",        "AY", 2,  4500, 9.62],
+    ["Claritromicina 500 mg IV",     "AY", 2,   600, 51.50],
+    ["Cefepima 1 g IV",              "AY", 2,   684, 25.21],
+    ["Cetoprofeno 100 mg IV",        "AY", 2,  5872, 3.07],
+    ["Amoxicilina+clavulanato 1 g",  "AY", 2,  1560, 10.13],
+    ["Cefalotina 1 g",               "BY", 2,  5320, 1.73],
+    ["Vancomicina 500 mg",           "BY", 2,  1360, 5.13],
+    ["Dipirona 500 mg comp.",        "CX", 5,  8920, 0.04],
+  ];
+  const DEMO_PISO   = 104923.81;
+  const DEMO_NECESS = 302415.66;
+
+  const CORPRIO = {1:"crit", 2:"warn", 3:"warn", 4:"ink-3", 5:"ink-3"};
+  const ROTSIT  = {INTEGRAL:"integral", PARCIAL:"parcial",
+                   SO_O_PISO:"só a reposição", NAO_ATENDIDO:"fora do plano"};
+
+  function pintarCurva(c){
+    $("#abc-kpis").innerHTML = ["A","B","C"].map(function(k){
+      const g = c.resumo[k];
+      const cor = k === "A" ? "crit" : (k === "B" ? "warn" : "ink-3");
+      return '<div class="card kpi"><div class="lbl">Classe ' + k + '</div>' +
+        '<div class="val">' + pcDec(g.participacao * 100, 1) + '<small>% do valor</small></div>' +
+        '<div class="foot">' + g.itens + ' itens · ' + Math.round(g.participacao_itens * 100) +
+        '% do catálogo · ' + pcBrl0(g.custo) + '/mês</div>' +
+        '<div class="band"><i style="width:' + (g.participacao * 100) +
+        '%; background:var(--' + cor + ')"></i></div></div>';
+    }).join("");
+
+    $("#abc-curva").innerHTML = ["A","B","C"].map(function(k){
+      const g = c.resumo[k], w = g.participacao * 100;
+      return '<i class="' + k.toLowerCase() + '" style="width:' + w +
+        '%" title="Classe ' + k + ' — ' + g.itens + ' itens, ' + pcBrl0(g.custo) + ' por mês">' +
+        (w > 8 ? k + ' · ' + g.itens + ' itens' : k) + '</i>';
+    }).join("");
+
+    $("#abc-nota").innerHTML = c.nota +
+      (c.avisos || []).map(a => '<div class="avisobox">' + a + '</div>').join("");
+  }
+
+  function pintarPlano(p, verba){
+    const gasto = p.linhas.reduce((s, l) => s + l.valor, 0);
+    const piso  = Math.min(p.valor_do_piso, gasto);
+    const prat  = Math.max(0, gasto - piso);
+    const sobra = Math.max(0, verba - gasto);
+    const pct = v => (verba > 0 ? v / verba * 100 : 0);
+
+    $("#plano-barra").innerHTML =
+      '<i class="piso" style="width:' + pct(piso) + '%" title="reposição até o ponto de pedido">' +
+        (pct(piso) > 16 ? "reposição · " + pcBrl0(piso) : "") + '</i>' +
+      '<i class="prat" style="width:' + pct(prat) + '%" title="tempo de prateleira">' +
+        (pct(prat) > 16 ? "prateleira · " + pcBrl0(prat) : "") + '</i>' +
+      (sobra > 1 ? '<i class="falta" style="width:' + pct(sobra) + '%">sobra ' + pcBrl0(sobra) + '</i>' : "");
+
+    const r = p.resumo;
+    $("#plano-kpis").innerHTML = [
+      ["Necessidade do ciclo", pcBrl0(p.necessidade_total), "",
+       r.deficit > 0
+         ? "faltam " + pcBrl0(r.deficit) + " (" + pcDec(r.deficit / p.necessidade_total * 100, 1) + "%)"
+         : "a verba cobre a necessidade inteira"],
+      ["Reposição mínima", pcBrl0(p.valor_do_piso), "",
+       p.piso_coberto
+         ? "cabe na verba — todos voltam ao ponto de pedido"
+         : "NÃO cabe na verba — isto é racionamento"],
+      ["Cobertura garantida", pcDec(r.cobertura_minima_meses, 1), " meses",
+       "é o menor tempo de estoque do conjunto depois do plano"],
+      ["Seguem descobertos", pcQtd(r.seguem_descobertos), " itens",
+       r.seguem_descobertos_vitais > 0
+         ? r.seguem_descobertos_vitais + " são vitais e sem substituto"
+         : "nenhum vital ficou exposto"],
+    ].map(function(x){
+      return '<div class="card kpi"><div class="lbl">' + x[0] + '</div>' +
+        '<div class="val">' + x[1] + (x[2] ? '<small>' + x[2] + '</small>' : '') + '</div>' +
+        '<div class="foot">' + x[3] + '</div></div>';
+    }).join("");
+
+    $("#plano-avisos").innerHTML =
+      (p.avisos || []).map(a => '<div class="avisobox">' + a + '</div>').join("") +
+      (p.risco_assumido || []).map(a => '<div class="avisobox grave">' + a + '</div>').join("");
+
+    $("#tplano").innerHTML =
+      '<thead><tr><th>Item</th><th>Célula</th><th class="r">Proposto</th>' +
+      '<th class="r">Necessário</th><th class="r">Valor</th><th class="r">Cobertura</th>' +
+      '<th>Situação</th></tr></thead><tbody>' +
+      p.linhas.map(function(l){
+        return '<tr><td>' + l.descricao + '</td>' +
+          '<td><b style="color:var(--' + (CORPRIO[l.prioridade] || "ink-3") + ')">' + l.celula + '</b></td>' +
+          '<td class="r">' + pcQtd(l.qtd_proposta) + '</td>' +
+          '<td class="r" style="color:var(--ink-3)">' + pcQtd(l.qtd_necessaria) + '</td>' +
+          '<td class="r">' + pcBrl(l.valor) + '</td>' +
+          '<td class="r">' + pcDec(l.cobertura_meses, 1) + ' m</td>' +
+          '<td>' + (ROTSIT[l.situacao] || l.situacao) +
+          (l.segue_descoberto ? ' <span class="tag crit">abaixo do PP</span>' : '') +
+          '</td></tr>';
+      }).join("") + '</tbody>';
+  }
+
+  function lerVerba(){
+    const bruto = ($("#verba").value || "").replace(/[^0-9]/g, "");
+    return Math.max(0, parseInt(bruto || "0", 10));
+  }
+
+  /* Sem API, a demonstração roda o MESMO algoritmo de dois estágios em cima
+     das linhas fictícias: repõe todos até o ponto de pedido e só então gasta
+     o saldo por criticidade. A tela mostra o comportamento real, com números
+     de exemplo — não um desenho estático. */
+  function planoDemo(verba){
+    const linhas = DEMO_LINHAS.map(function(x){
+      const necessario = x[3], preco = x[4];
+      // O piso de cada item é a fração do lote que o leva de volta ao PR.
+      // No conjunto de referência isso equivale a 40% do lote.
+      return {descricao:x[0], celula:x[1], prioridade:x[2],
+              qtd_necessaria:necessario, preco:preco,
+              piso: Math.round(necessario * 0.4)};
+    });
+    let saldo = verba;
+    linhas.forEach(function(l){
+      const custoPiso = l.piso * l.preco;
+      l.qtd_proposta = 0; l.valor = 0;
+      if(custoPiso <= saldo){ l.qtd_proposta = l.piso; l.valor = custoPiso; saldo -= custoPiso; }
+      else if(saldo > 0 && l.preco > 0){
+        l.qtd_proposta = Math.floor(saldo / l.preco); l.valor = l.qtd_proposta * l.preco; saldo -= l.valor;
+      }
+    });
+    linhas.forEach(function(l){
+      const resto = (l.qtd_necessaria - l.qtd_proposta) * l.preco;
+      if(resto <= 0 || saldo <= 0) return;
+      if(resto <= saldo){ l.qtd_proposta = l.qtd_necessaria; l.valor += resto; saldo -= resto; }
+      else{ const cabe = Math.floor(saldo / l.preco);
+            l.qtd_proposta += cabe; l.valor += cabe * l.preco; saldo -= cabe * l.preco; }
+    });
+
+    let descobertos = 0, vitais = 0;
+    linhas.forEach(function(l){
+      const at = l.qtd_proposta / l.qtd_necessaria;
+      l.situacao = at >= 0.999 ? "INTEGRAL"
+                 : (l.qtd_proposta <= 0 ? "NAO_ATENDIDO"
+                 : (l.qtd_proposta <= l.piso ? "SO_O_PISO" : "PARCIAL"));
+      l.segue_descoberto = l.qtd_proposta < l.piso;
+      if(l.segue_descoberto){ descobertos++; if(l.celula.charAt(1) === "Z") vitais++; }
+      // No conjunto de referência o ponto de pedido cobre 3 meses (LT 2 + ES 1)
+      // e o lote inteiro leva ao alvo de 6 (TE 3 + LT 2 + ES 1). Quem recebe só
+      // a reposição fica nos 3; a prateleira é o que compra os outros 3.
+      const acima = l.qtd_necessaria > l.piso
+                  ? Math.max(0, l.qtd_proposta - l.piso) / (l.qtd_necessaria - l.piso) : 0;
+      l.cobertura_meses = l.qtd_proposta < l.piso
+                        ? 3 * (l.piso > 0 ? l.qtd_proposta / l.piso : 0)
+                        : 3 + 3 * acima;
+    });
+
+    const conta = s => linhas.filter(l => l.situacao === s).length;
+    const p = {
+      necessidade_total: DEMO_NECESS, valor_do_piso: DEMO_PISO,
+      piso_coberto: verba >= DEMO_PISO, linhas: linhas, risco_assumido: [], avisos: [],
+      resumo: {integral:conta("INTEGRAL"), parcial:conta("PARCIAL"),
+               so_piso:conta("SO_O_PISO"), nao_atendido:conta("NAO_ATENDIDO"),
+               seguem_descobertos:descobertos, seguem_descobertos_vitais:vitais,
+               cobertura_minima_meses: Math.min.apply(null, linhas.map(l => l.cobertura_meses)),
+               deficit: Math.max(0, DEMO_NECESS - verba)},
+    };
+    if(!p.piso_coberto) p.avisos.push("A verba de " + pcBrl(verba) + " não cobre nem a reposição " +
+      "até o ponto de pedido (" + pcBrl(DEMO_PISO) + "). Isto não é um plano de compra — é um " +
+      "racionamento, e precisa de decisão da diretoria.");
+    if(p.resumo.deficit > 0) p.avisos.push("A necessidade do ciclo é " + pcBrl(DEMO_NECESS) +
+      " e a verba, " + pcBrl(verba) + ": faltam " + pcBrl(p.resumo.deficit) + " (" +
+      pcDec(p.resumo.deficit / DEMO_NECESS * 100, 1) + "%). O plano abaixo distribui a falta " +
+      "onde ela custa menos — não a elimina.");
+    linhas.filter(l => l.segue_descoberto && l.celula.charAt(1) === "Z").forEach(function(l){
+      p.risco_assumido.push(l.descricao + " (" + l.celula + ") segue abaixo do ponto de pedido. " +
+        "Vital e sem substituto.");
+    });
+    return p;
+  }
+
+  async function montarPlano(){
+    const verba = lerVerba();
+    if(verba <= 0){
+      $("#plano-avisos").innerHTML =
+        '<div class="avisobox grave">Informe uma verba maior que zero.</div>';
+      return;
+    }
+    $("#verba").value = pcQtd(verba);
+
+    if(API.viva && API.token && API.unidade){
+      try{
+        pintarPlano(await API.post("/plano-compra", {unidade_id: API.unidade, verba: verba}), verba);
+        return;
+      }catch(e){ /* cai para a demonstração; a etiqueta do cabeçalho diz qual é a origem */ }
+    }
+    pintarPlano(planoDemo(verba), verba);
+  }
+
+  (async function iniciarPlano(){
+    pintarCurva(DEMO_ABC);
+    await montarPlano();
+
+    const etiqueta = $("#plano-origem");
+    if(await API.ping()){
+      etiqueta.textContent = "API respondendo · entre para ver dado real";
+      etiqueta.className = "tag ok";
+    }else{
+      etiqueta.textContent = "demonstração · dados fictícios";
+      etiqueta.className = "tag";
+      etiqueta.title = "Nenhuma API respondendo em " + (API.base || location.origin) +
+                       ". Os números desta tela são de exemplo.";
+    }
+
+    $("#calcplano").addEventListener("click", montarPlano);
+    $("#verba").addEventListener("keydown", e => { if(e.key === "Enter") montarPlano(); });
+  })();
+
 })();
 </script>
