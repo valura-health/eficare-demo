@@ -15,9 +15,9 @@
 Protótipo navegável da interface do **EfiCare**, plataforma de gestão de suprimentos, custo e
 padronização hospitalar da ValuraHealth.
 
-Doze telas: painel, ingestão de documentos, catálogo com matriz ABC×VEN, ressuprimento,
+Treze telas: painel, ingestão de documentos, catálogo com matriz ABC×VEN, ressuprimento,
 controle de validade, tabelas de preço, assistente, antecipação de risco, recebimento,
-negociação, FMEA e relatórios.
+plano de compra, negociação, FMEA e relatórios.
 
 Arquivo único, autocontido, sem dependência externa. Tema claro e escuro, acessibilidade
 WCAG 2.2 AA.
